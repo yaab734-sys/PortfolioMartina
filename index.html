@@ -9,23 +9,22 @@
         body, html {
             margin: 0;
             padding: 0;
-            height: 100%;
             font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
         }
         #pdf-container {
             width: 100%;
-            height: 100%;
-            overflow-y: auto;
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: #f0f0f0;
+            padding: 10px 0;
         }
         canvas {
             display: block;
             margin: 10px auto;
             border: 1px solid #ccc;
             max-width: 100%;
+            background-color: white;
         }
         #controls {
             position: sticky;
@@ -47,54 +46,42 @@
 </head>
 <body>
     <div id="controls">
-        <button onclick="previousPage()">← Anterior</button>
-        <span id="page-info">Página 1</span>
-        <button onclick="nextPage()">Siguiente →</button>
+        <span id="page-info">Cargando PDF...</span>
     </div>
     <div id="pdf-container"></div>
 
     <script>
         const pdfUrl = 'Portfolio 2026.pdf';
         let pdfDoc = null;
-        let currentPage = 1;
 
         pdfjsLib.getDocument(pdfUrl).promise.then(doc => {
             pdfDoc = doc;
-            renderPage(currentPage);
+            renderAllPages();
         }).catch(err => {
             document.getElementById('pdf-container').innerHTML = '<p>Error al cargar el PDF</p>';
             console.error(err);
         });
 
-        function renderPage(pageNum) {
-            pdfDoc.getPage(pageNum).then(page => {
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                const viewport = page.getViewport({ scale: window.innerWidth > 768 ? 1.5 : 1 });
+        function renderAllPages() {
+            const container = document.getElementById('pdf-container');
+            container.innerHTML = '';
+            
+            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                pdfDoc.getPage(pageNum).then(page => {
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    const viewport = page.getViewport({ scale: window.innerWidth > 768 ? 1.5 : 1 });
 
-                canvas.width = viewport.width;
-                canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
 
-                page.render({ canvasContext: context, viewport: viewport });
-                
-                document.getElementById('pdf-container').innerHTML = '';
-                document.getElementById('pdf-container').appendChild(canvas);
-                document.getElementById('page-info').textContent = `Página ${pageNum} de ${pdfDoc.numPages}`;
-            });
-        }
-
-        function nextPage() {
-            if (currentPage < pdfDoc.numPages) {
-                currentPage++;
-                renderPage(currentPage);
+                    page.render({ canvasContext: context, viewport: viewport });
+                    
+                    container.appendChild(canvas);
+                });
             }
-        }
-
-        function previousPage() {
-            if (currentPage > 1) {
-                currentPage--;
-                renderPage(currentPage);
-            }
+            
+            document.getElementById('page-info').textContent = `PDF cargado: ${pdfDoc.numPages} páginas`;
         }
     </script>
 </body>
